@@ -4,11 +4,12 @@
 
 from subprocess import call
 import glob
+import xml.etree.ElementTree as ET # phones home
 
-def fetch_pids(namespace=None,collection=None,content_model=None,dsid=None,withdsid=True,solr=None):
+def fetch_pids(dest, namespace=None,collection=None,content_model=None,dsid=None,withdsid=True,solr=None):
     """ Fetch the pids of stuff"""
 
-    call_list = ["drush","islandora_datastream_crud_fetch_fids","--user=admin"]
+    call_list = ["drush","islandora_datastream_crud_fetch_pids","--user=admin", "--pid_file="+dest]
 
     if namespace is not None:
         call_list.append("--namespace="+namespace)
@@ -23,7 +24,7 @@ def fetch_pids(namespace=None,collection=None,content_model=None,dsid=None,withd
             call_list.append("--without_dsid="+dsid)
     if solr is not None:
         call_list.append("--namespace="+namespace)
-
+    print(call_list)
     call(call_list) 
 
 def fetch_mods(pid_path,dest):
@@ -38,11 +39,25 @@ def modify_mods(mods_directory):
     
     files = glob.glob(mods_directory+"/*")
     for f in files:
-        with open(f) as curfile:
-            # Mods editing goes here
-            pass
+        tree = ET.parse(f)
+        root = tree.getroot()
+        for child in root:
+            if "abstract" in child.tag:
+                child.text = "Caden's test text"
+        tree.write(f)
 
 def push_mods(mods_files):
     """ Pushes modified mods files""" 
 
-    call_list = ["drush","islandora_datastream_crud_push_datastream","--user=admin","--datastream_mimetype=application/xml","--datastreams_source_directory="+mods_files,"--datastreams_crud_log=/tmp/crud.log"]
+    call_list = ["drush","islandora_datastream_crud_push_datastreams","--user=admin","--datastreams_mimetype=application/xml","--datastreams_source_directory="+mods_files,"--datastreams_crud_log=/tmp/crud.log"]
+    call(call_list)
+
+if __name__ == "__main__":
+
+    pid_location = "/home/vagrant/test1pids.txt"
+    mods_location = "/home/vagrant/testdir"
+    collection = "islandora:test3"
+    fetch_pids(pid_location,collection=collection)
+    fetch_mods(pid_location,mods_location)
+    modify_mods(mods_location)
+    push_mods(mods_location)
