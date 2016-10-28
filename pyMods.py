@@ -7,7 +7,16 @@ import glob
 import xml.etree.ElementTree as ET # phones home
 
 def fetch_pids(dest, namespace=None,collection=None,content_model=None,dsid=None,withdsid=True,solr=None):
-    """ Fetch the pids of stuff"""
+    """ dest->(String) full path to plain text file where pids will be stored
+        namespace->(String) namespace to search
+        collection->(String) collection to search
+        content_model->(String) content model to search
+        dsid->(String) id of a datastream
+        withdsid->(Boolean) true=with disd, false=cannot have dsid
+        solr->(String) a solr query to search with
+        
+        This function uses the CRUD to perform a search and return the pids of islandora objects.
+        If multiple search options are chosen, they are AND operated together."""
 
     call_list = ["drush","islandora_datastream_crud_fetch_pids","--user=admin", "--pid_file="+dest]
 
@@ -28,14 +37,22 @@ def fetch_pids(dest, namespace=None,collection=None,content_model=None,dsid=None
     call(call_list) 
 
 def fetch_mods(pid_path,dest):
-    """ Fetch the mods files given a list of pids"""
+    """ pid_path->(String) full path to the pids file
+        dest->(String) destination to fetch the datastreams to.
+
+        
+        Fetch the mods files given a list of pids"""
 
     call_list = ["drush","islandora_datastream_crud_fetch_datastreams","--user=admin","--pid_file="+pid_path,"--dsid=MODS","--datastreams_directory="+dest]
     call(call_list)
 
 
 def modify_mods(mods_directory,backup=None):
-    """ Modifies the mods files"""
+    """ mods_directory->(String) path to directory containing new MODS files
+        backup->(boolean) directory to copy original MODS files to
+        
+        modifies the MODS records
+        """
     
     if backup is not None:
         backup_call = ["cp",mods_directory,backup]
@@ -50,7 +67,9 @@ def modify_mods(mods_directory,backup=None):
         tree.write(f)
 
 def push_mods(mods_files):
-    """ Pushes modified mods files""" 
+    """ mods_files->(string) directory containing modified MODS files
+        
+        Pushes modified mods files to islandora""" 
 
     call_list = ["drush","islandora_datastream_crud_push_datastreams","--user=admin","--datastreams_mimetype=application/xml","--datastreams_source_directory="+mods_files,"--datastreams_crud_log=/tmp/crud.log"]
     call(call_list)
