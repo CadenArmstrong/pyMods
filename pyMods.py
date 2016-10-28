@@ -34,9 +34,12 @@ def fetch_mods(pid_path,dest):
     call(call_list)
 
 
-def modify_mods(mods_directory):
+def modify_mods(mods_directory,backup=None):
     """ Modifies the mods files"""
     
+    if backup is not None:
+        backup_call = ["cp",mods_directory,backup]
+        call(backup_call)
     files = glob.glob(mods_directory+"/*")
     for f in files:
         tree = ET.parse(f)
